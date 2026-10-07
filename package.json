@@ -1,0 +1,33 @@
+{
+  "name": "bindler-mcp",
+  "version": "1.0.0",
+  "description": "Verified EU and UAE regulatory computation for AI assistants: UAE Corporate Tax, EU AI Act classification and CBAM certificate cost, each returned with the article it comes from.",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "bindler-mcp": "./src/server.js"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/verify.js && node test/http.js",
+    "start": "node src/server.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "tax",
+    "compliance",
+    "cbam",
+    "eu-ai-act",
+    "uae-corporate-tax",
+    "regulation"
+  ],
+  "homepage": "https://bindler.co/mcp/",
+  "engines": {
+    "node": ">=18"
+  }
+}
