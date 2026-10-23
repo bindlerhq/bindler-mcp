@@ -22,7 +22,7 @@ eq("unknown version falls back to latest", (await r.json()).result.protocolVersi
 // 2. tools/list
 r = await post({ jsonrpc: "2.0", id: 2, method: "tools/list" });
 j = await r.json();
-eq("three tools", j.result.tools.map(t => t.name), ["uae_corporate_tax", "eu_ai_act_classify", "cbam_cost"]);
+eq("four tools", j.result.tools.map(t => t.name), ["uae_corporate_tax", "eu_ai_act_classify", "cbam_cost", "csrd_scope"]);
 
 // 3. tools/call: UAE CT on AED 600,000 of accounting income, no adjustments.
 // Worked by hand from Federal Decree-Law 47 of 2022: the 0% band is the first AED 375,000

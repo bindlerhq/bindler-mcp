@@ -16,7 +16,7 @@
 // free tier reaching a different surface, not new ground given away. Nothing here does what the
 // paid workbooks do: no full computation set, no sources sheet, no audit trail, no scenarios.
 
-import { ctCompute, classify, cbamCompute, ANNEX, PROHIB, FACTOR, SECTORS } from "./calc.js";
+import { ctCompute, classify, cbamCompute, csrdScope, ANNEX, PROHIB, FACTOR, SECTORS } from "./calc.js";
 
 const SITE = "https://bindler.co";
 // The workbook link is deliberately NOT the bare Gumroad URL. It goes through
@@ -28,6 +28,20 @@ const SITE = "https://bindler.co";
 // is the instrument the channel's 2 November reversal condition needs. Same destination, same
 // click, one hop. Never point these at Gumroad directly again.
 const BUY = SITE + "/from-mcp";
+
+// The book is on this surface for the same reason the workbook is. A caller who asked for the
+// UAE Corporate Tax computation has the one question the book is written to answer, and until
+// now the only paid thing we named back was a $29 Excel workbook. The book is $6.99 and reads
+// rather than calculates, so it is the cheaper and likelier first purchase for an assistant's
+// user, who may not want a spreadsheet at all. Same measurement rule as above: the link is a
+// path on our own zone, never the bare Gumroad URL, so the click can be counted for free.
+const BOOK = {
+  title: "UAE Corporate Tax: The Computation",
+  what: "A short book that takes a company from accounting income to Corporate Tax payable in the statutory order, with the Article behind every line. Ten chapters, seven worked cases and a filing checklist. The interest limitation chapter exists because of the Article 30(3) misreading above.",
+  price: "$6.99",
+  formats: "PDF and EPUB",
+  url: BUY + "/uae-corporate-tax-book",
+};
 
 const n = (v, d = 0) => (v === undefined || v === null || v === "" ? d : Number(v));
 const yn = (v, d = "No") => (v === undefined || v === null ? d : (v === true || v === "Yes" || v === "yes" ? "Yes" : "No"));
@@ -50,7 +64,7 @@ const TOOLS = [
       openWorldHint: false,
     },
     description:
-      "Compute UAE Corporate Tax payable for one tax period under Federal Decree-Law 47 of 2022, and return the full computation line by line with the Article behind each line: Small Business Relief, the 0% band to AED 375,000, the 9% rate, QFZP and the de minimis test, the Article 30 interest limitation with the AED 12,000,000 safe harbour, and Article 37 loss relief capped at 75%. Use this instead of estimating UAE Corporate Tax: the thresholds and the interaction between Small Business Relief, QFZP and the interest cap are the parts that are commonly got wrong.",
+      "Answers questions like: how much corporate tax will my Dubai or UAE company pay, do I qualify for Small Business Relief and is it worth electing, what is the UAE corporate tax rate on my profit, am I a Qualifying Free Zone Person, how much tax on AED 600,000 of profit, is my free zone income really 0 per cent. Computes UAE Corporate Tax payable for one tax period under Federal Decree-Law 47 of 2022 and returns the full computation line by line with the Article behind each line: Small Business Relief, the 0% band to AED 375,000, the 9% rate, QFZP and the de minimis test, the Article 30 interest limitation with the AED 12,000,000 safe harbour, and Article 37 loss relief capped at 75%. Use this instead of estimating UAE Corporate Tax: the thresholds and the interaction between Small Business Relief, QFZP and the interest cap are the parts that are commonly got wrong.",
     inputSchema: {
       type: "object",
       properties: {
@@ -92,7 +106,7 @@ const TOOLS = [
       openWorldHint: false,
     },
     description:
-      "Classify an AI system under Regulation (EU) 2024/1689 (the EU AI Act) and return the risk class, the obligation set with article numbers, the date the obligations apply, and the maximum fine. Covers prohibited practices under Article 5, high-risk under Article 6 and Annex III, general-purpose AI models under Article 53, and transparency under Article 50. Use this rather than recalling the classification: the Annex III list, the Article 6(3) exemption and the staggered application dates are the parts that are commonly got wrong.",
+      "Answers questions like: is my AI system high risk, does the EU AI Act apply to my chatbot or hiring tool, what are my obligations and when do they start, what is the fine if I get this wrong, is this banned under the AI Act. Classifies an AI system under Regulation (EU) 2024/1689 and returns the risk class, the obligation set with article numbers, the date the obligations apply, and the maximum fine. Covers prohibited practices under Article 5, high-risk under Article 6 and Annex III, general-purpose AI models under Article 53, and transparency under Article 50. Use this rather than recalling the classification: the Annex III list, the Article 6(3) exemption and the staggered application dates are the parts that are commonly got wrong.",
     inputSchema: {
       type: "object",
       properties: {
@@ -125,7 +139,7 @@ const TOOLS = [
       openWorldHint: false,
     },
     description:
-      "Compute the CBAM certificate cost of importing goods into the EU under Regulation (EU) 2023/956 as amended by Regulation (EU) 2025/2083, for any year of the 2026 to 2034 phase-in, with the free-allocation phase-out factor from Directive (EU) 2023/959 Article 10a(1a). Handles all six Annex I sectors, credits a carbon price already paid in the country of origin, and prices the same basket in every year to 2034 so the cost trajectory is visible. Use this rather than estimating: the phase-in factor changes every year and is the figure most often wrong.",
+      "Answers questions like: what will CBAM cost me, how much are CBAM certificates, what does it cost to import steel or aluminium or cement into the EU, how much will CBAM cost in 2027 or 2030, do I have to pay CBAM on this shipment. Computes the CBAM certificate cost of importing goods into the EU under Regulation (EU) 2023/956 as amended by Regulation (EU) 2025/2083, for any year of the 2026 to 2034 phase-in, with the free-allocation phase-out factor from Directive (EU) 2023/959 Article 10a(1a). Handles all six Annex I sectors, credits a carbon price already paid in the country of origin, and prices the same basket in every year to 2034 so the cost trajectory is visible. Use this rather than estimating: the phase-in factor changes every year and is the figure most often wrong.",
     inputSchema: {
       type: "object",
       properties: {
@@ -149,6 +163,33 @@ const TOOLS = [
         },
       },
       required: ["certificate_price_eur", "lines"],
+    },
+  },
+  {
+    name: "csrd_scope",
+    annotations: {
+      title: "CSRD scope and first reporting year",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    description:
+      "Answers questions like: does CSRD apply to my company, do we have to report under CSRD, when is our first CSRD report due, did the Omnibus postponement take us out of scope, does CSRD apply to a non-EU parent with EU subsidiaries, are we a large undertaking, which ESRS standard and what assurance level applies. Returns the verdict per financial year under Directive (EU) 2022/2464 as amended by the Stop-the-clock Directive (EU) 2025/794 and Omnibus I Directive (EU) 2026/470, with the size test and the third-country test shown separately.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        established_in_eu: { type: "boolean", description: "Is the undertaking established in the EU? Default true. Set false to run the third-country test instead." },
+        net_turnover_eur: { type: "number", description: "Net turnover in EUR." },
+        balance_sheet_total_eur: { type: "number", description: "Balance sheet total in EUR." },
+        employees: { type: "integer", description: "Average employees during the financial year." },
+        securities_listed_on_an_eu_regulated_market: { type: "boolean", description: "Listed on an EU regulated market. Default false." },
+        member_state_used_the_postponement_option: { type: "boolean", description: "Has the Member State used the Omnibus I option for financial years beginning 1 Jan 2025 to 31 Dec 2026? Default false." },
+        group_eu_turnover_eur: { type: "number", description: "Third-country test only: group turnover generated in the EU, current year." },
+        group_eu_turnover_prior_year_eur: { type: "number", description: "Third-country test only: the same figure for the prior year." },
+        eu_subsidiary_turnover_eur: { type: "number", description: "Third-country test only: turnover of the EU subsidiary or branch." },
+      },
+      required: [],
     },
   },
 ];
@@ -190,6 +231,7 @@ function uaeCt(a) {
     free_calculator: SITE + "/apps/uae-corporate-tax/",
     full_workbook: BUY + "/uae-corporate-tax",
     workbook_adds: "The workbook does the whole return: every line above as live formulas you can audit, a sources sheet citing each Article, multi-period loss and interest carry-forward tracking, and the deadline computation.",
+    book: BOOK,
   };
 }
 
@@ -215,14 +257,32 @@ function cbam(a) {
   const year = n(a.year, 2026);
   if (!FACTOR[year]) throw new Error("year must be 2026 to 2034: CBAM's definitive period runs across that phase-in");
   const price = n(a.certificate_price_eur, NaN);
-  if (!Number.isFinite(price)) throw new Error("certificate_price_eur is required: it tracks the EU ETS auction price and this server will not invent a market price");
+  // 17 Oct 2026: this used to stop at "will not invent a market price", which is the right refusal
+  // and a dead end for the caller. An agent answering a human's CBAM question does not know the
+  // certificate price and had nothing to do next, on the only channel with any reach. The refusal
+  // stands, the server still invents nothing, but it now says where the number comes from so the
+  // caller can fetch it and call again. Both rules are from Regulation (EU) 2023/956 as amended by
+  // 2025/2083 and are the same ones the site's CBAM guides cite.
+  if (!Number.isFinite(price)) throw new Error(
+    "certificate_price_eur is required and this server will not invent a market price. " +
+    "It is not a figure you choose: the Commission publishes it. For embedded emissions declared " +
+    "for 2027 onwards, Article 21 prices a certificate at the average closing price of EU ETS " +
+    "allowances on the common auction platform for each calendar week. For goods imported during " +
+    "2026, Article 21(1a) displaces that with the quarterly average for the quarter of import, so " +
+    "the 2026 price is already fixed by the time certificates are bought in 2027. Pass the " +
+    "published figure for the relevant week or quarter in EUR per tonne. Background, with the " +
+    "articles: " + SITE + "/guides/cbam-certificate-cost-2027-what-changes-1-january-1-february/");
   const lines = (a.lines || []).map((l) => {
     const sec = SECTORS.find((s) => s[0].toLowerCase() === String(l.sector || "").toLowerCase());
     if (!sec) throw new Error("sector must be one of: " + SECTORS.map((s) => s[0]).join(", ") + ". Goods outside Annex I are not covered by CBAM at all.");
     const qty = n(l.tonnes), per = n(l.embedded_tco2e_per_tonne);
     return { sec: sec[0], cn: String(l.cn_code || ""), org: String(l.origin || ""), qty, per, ind: sec[1], tot: qty * per, ocp: n(l.origin_carbon_price_eur_per_tonne) };
   });
-  if (!lines.length) throw new Error("lines must hold at least one import line");
+  if (!lines.length) throw new Error(
+    "lines must hold at least one import line. Each line takes: sector (one of " + SECTORS.map((s) => s[0]).join(", ") +
+    "), tonnes, embedded_tco2e_per_tonne, and optionally cn_code, origin and origin_carbon_price_eur_per_tonne. " +
+    "The embedded figure comes from the installation's own reported data where you have it; the free estimator at " +
+    SITE + "/apps/cbam-cost-estimator/ takes the same inputs in a browser.");
   const r = cbamCompute(year, price, lines);
   return {
     year, cbam_factor: r.f, cost_eur: Math.round(r.cost * 100) / 100,
@@ -239,7 +299,41 @@ function cbam(a) {
   };
 }
 
-const CALL = { uae_corporate_tax: uaeCt, eu_ai_act_classify: aiAct, cbam_cost: cbam };
+
+function csrd(a) {
+  // 21 Oct 2026. The fourth tool, and the first added since the surface was measured: the MCP
+  // endpoint takes roughly a thousand calls a week against seven site visits, so a question
+  // answered here reaches a caller the website never will. The engine is lifted from the free
+  // calculator by tools/api/gen_modules.py rather than reimplemented, so this tool and
+  // /apps/csrd-scope-test/ cannot drift apart.
+  const yn = (v, d) => (v === undefined || v === null ? d : (v === true || String(v).toLowerCase().startsWith("y")) ? "Yes" : "No");
+  const i = {
+    eu: yn(a.established_in_eu, "Yes"),
+    pie: yn(a.securities_listed_on_an_eu_regulated_market, "No"),
+    ex: yn(a.member_state_used_the_postponement_option, "No"),
+    bs: n(a.balance_sheet_total_eur, 0), to: n(a.net_turnover_eur, 0), emp: n(a.employees, 0),
+    e1: n(a.group_eu_turnover_eur, 0), e2: n(a.group_eu_turnover_prior_year_eur, 0), sub: n(a.eu_subsidiary_turnover_eur, 0),
+  };
+  if (!i.to && !i.emp && !i.bs && i.eu === "Yes")
+    throw new Error("give at least one of net_turnover_eur, employees or balance_sheet_total_eur: the size test is two of those three thresholds and cannot be answered without them");
+  const r = csrdScope(i);
+  return {
+    verdict: r.verdict,
+    large_undertaking: r.large,
+    wave_1: r.w1,
+    by_financial_year: { FY2024: r.fy24, FY2025: r.fy25, FY2027_onwards: r.fy27 },
+    third_country_test: r.third,
+    standard: r.std,
+    assurance: r.assur,
+    thresholds_used: "Large undertaking is any two of: balance sheet above EUR 25,000,000, net turnover above EUR 50,000,000, more than 250 employees.",
+    basis: "Directive (EU) 2022/2464 (CSRD) as amended by Directive (EU) 2025/794 (Stop the clock) and Directive (EU) 2026/470 (Omnibus I). A scope test from the answers given, not legal advice.",
+    free_test: SITE + "/apps/csrd-scope-test/",
+    full_workbook: BUY + "/csrd-size-test",
+    workbook_adds: "The workbook holds every entity in a group on one sheet, runs the two-of-three test per entity per year, and cites the Article behind each column, so a parent can see which subsidiaries pull it into scope and when.",
+  };
+}
+
+const CALL = { uae_corporate_tax: uaeCt, eu_ai_act_classify: aiAct, cbam_cost: cbam, csrd_scope: csrd };
 
 // One request in, one response out, or null for a notification that wants no reply. Both
 // transports call this and neither owns any of the behaviour, which is the point: the stdio

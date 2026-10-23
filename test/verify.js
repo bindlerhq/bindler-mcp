@@ -60,7 +60,7 @@ const rs = await rpc([
 const by = Object.fromEntries(rs.map((r) => [r.id, r]));
 
 eq("server identifies itself", by[1].result.serverInfo.name, "bindler");
-eq("three tools are advertised", by[2].result.tools.length, 3);
+eq("four tools are advertised", by[2].result.tools.length, 4);
 eq("every tool carries an input schema", by[2].result.tools.every((t) => t.inputSchema && t.inputSchema.type === "object"), true);
 
 eq("UAE CT on 600,000 with no election", body(by[3]).corporate_tax_payable, "AED 20,250");
@@ -94,6 +94,17 @@ for (const [id, label] of [[3, "UAE CT"], [7, "AI Act"], [10, "CBAM"]]) {
   eq(label + " names its free tool and its workbook",
     !!(b.free_calculator || b.free_classifier || b.free_estimator) && !!b.full_workbook, true);
   eq(label + " states its legal basis", /Regulation|Decree-Law/.test(b.basis), true);
+}
+
+// The UAE CT tool also returns the book, and the link must be the countable path on our own zone.
+// A bare Gumroad URL here would still sell but could never be attributed, which is how this
+// channel went 91 calls with nothing readable against it.
+{
+  const b = body(by[3]);
+  eq("UAE CT names the book", /UAE Corporate Tax: The Computation/.test(b.book && b.book.title), true);
+  eq("the book link is countable, not bare Gumroad",
+    b.book.url === "https://bindler.co/from-mcp/uae-corporate-tax-book", true);
+  eq("the book carries its price", b.book.price, "$6.99");
 }
 
 console.log("");

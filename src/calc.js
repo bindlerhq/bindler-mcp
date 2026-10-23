@@ -47,4 +47,35 @@ function classify(v){
 const FACTOR={2026:0.025,2027:0.05,2028:0.10,2029:0.225,2030:0.485,2031:0.61,2032:0.735,2033:0.86,2034:1.0};
 const SECTORS=[["Cement",true],["Fertilisers",true],["Iron and steel",false],["Aluminium",false],["Hydrogen",false],["Electricity",false]];
 function cbamCompute(year,price,ls){const f=FACTOR[year]; let tq=0,te=0,tc=0,cost=0; const rows=ls.map(l=>{const ch=l.tot*f; const net=Math.max(0,price-l.ocp); const c=ch*net; tq+=l.qty; te+=l.tot; tc+=ch; cost+=c; return {...l,ch,net,c};}); return {f,rows,tq,te,tc,cost,certs:Math.ceil(tc),perT:tq?cost/tq:0};}
-export { ctCompute, classify, cbamCompute, ANNEX, PROHIB, FACTOR, SECTORS };
+const CSRD_R={emp1000:1000,to450:450000000,emp500:500,bs25:25000000,to50:50000000,emp250:250,eu450:450000000,sub200:200000000,fy2027:2027,fy2028:2028}
+function csrdScope(i){
+ const large=((i.bs>CSRD_R.bs25)+(i.to>CSRD_R.to50)+(i.emp>CSRD_R.emp250))>=2;
+ const w1=i.eu==="Yes" && large && i.pie==="Yes" && i.emp>CSRD_R.emp500;
+ const omni=i.emp>CSRD_R.emp1000 && i.to>CSRD_R.to450;
+ const tc=i.eu==="No" && i.e1>CSRD_R.eu450 && i.e2>CSRD_R.eu450 && i.sub>CSRD_R.sub200;
+ const smeListed=i.pie==="Yes" && !large;
+ const fy24 = i.eu==="No" ? "Not applicable: see the third-country test"
+   : w1 ? "Reported under CSRD: Directive (EU) 2022/2464 Art 5(2)(a)" : "No CSRD obligation";
+ let fy25;
+ if(i.eu==="No") fy25="Not applicable: see the third-country test";
+ else if(!w1) fy25="No CSRD obligation: wave 2 was postponed to FY2027 by Directive (EU) 2025/794 and replaced by the FY2027 thresholds in Directive (EU) 2026/470";
+ else if(omni) fy25="Reports: Directive (EU) 2026/470 keeps wave 1 for three financial years from 1 January 2024";
+ else if(i.ex==="Yes") fy25="Exempt: the Member State has used the Directive (EU) 2026/470 option for financial years beginning 1 January 2025 to 31 December 2026";
+ else if(i.ex==="No") fy25="Reports: the Member State has not used the Directive (EU) 2026/470 exemption option";
+ else fy25="Reports unless the Member State uses the Directive (EU) 2026/470 option to exempt wave-1 entities below the new thresholds; check the transposing law";
+ const fy27 = i.eu==="No" ? "Not an EU undertaking: see the third-country test below"
+   : omni ? "In scope: exceeds 1 000 employees and EUR 450m net turnover, Directive 2013/34/EU Art 19a(1) or 29a(1) as amended by Directive (EU) 2026/470"
+   : "Out of scope from FY2027: below 1 000 employees or EUR 450m net turnover; the voluntary standard applies and value-chain requests are capped at it (Art 19a(3))";
+ const third = i.eu==="Yes" ? "Not applicable: EU undertaking"
+   : tc ? "In scope under Art 40a: EU net turnover above EUR 450m in each of the last two financial years and an EU subsidiary or branch above EUR 200m; financial years starting on or after 1 January "+CSRD_R.fy2028+" (Directive (EU) 2022/2464 Art 5(2)(d); confirm in the transposing law)"
+   : "Out of scope under Art 40a: test each EU subsidiary on its own figures as an EU undertaking";
+ const std = (omni || tc) ? "ESRS: Delegated Regulation (EU) 2023/2772, simplified set due from the Commission by 18 September 2026 under Directive (EU) 2026/470"
+   : "Voluntary standard for undertakings under 1 000 employees (to be adopted by the Commission under Directive (EU) 2026/470); no obligation";
+ const assur = omni ? "Limited assurance; Directive (EU) 2026/470 removes the move to reasonable assurance and sets the limited assurance standard for adoption by 1 July 2027" : "None required";
+ let verdict;
+ if(i.eu==="No") verdict = tc ? "IN SCOPE from FY"+CSRD_R.fy2028+" (Art 40a)" : "OUT OF SCOPE (Art 40a); test EU subsidiaries separately";
+ else if(omni) verdict = w1 ? "IN SCOPE: reporting since FY2024 and continues from FY2027" : "IN SCOPE from FY"+CSRD_R.fy2027+", first report in "+(CSRD_R.fy2027+1);
+ else verdict = w1 ? "WAVE 1 ENTITY that falls out of scope from FY2027; FY2025 and FY2026 depend on the Member State option" : "OUT OF SCOPE: no CSRD reporting obligation";
+ return {large,w1,omni,tc,smeListed,fy24,fy25,fy27,third,std,assur,verdict};
+}
+export { ctCompute, classify, cbamCompute, csrdScope, CSRD_R, ANNEX, PROHIB, FACTOR, SECTORS };

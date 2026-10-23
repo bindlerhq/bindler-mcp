@@ -25,6 +25,10 @@ eu_ai_act_classify  Regulation (EU) 2024/1689: risk class, the obligation set wi
 cbam_cost           Regulation (EU) 2023/956 as amended by 2025/2083: certificate cost for any
                     year of the 2026 to 2034 phase-in, all six Annex I sectors, origin carbon
                     price credited, and the same basket priced in every year to 2034.
+
+csrd_scope          Directive (EU) 2022/2464 as amended by 2025/794 and Omnibus I 2026/470:
+                    whether CSRD applies, per financial year, with the size test and the
+                    third-country test shown separately, the ESRS set and the assurance level.
 ```
 
 ## Add it
@@ -42,7 +46,7 @@ Or in any MCP client that takes a URL:
 ```
 
 The hosted endpoint is free for 25 calls a day per address; past that send a
-[Bindler API](https://bindler.co/api/) key in `x-api-key`. The three calculators stay free in the
+[Bindler API](https://bindler.co/api/) key in `x-api-key`. The four calculators stay free in the
 browser at https://bindler.co/apps/ with no key at all.
 
 Locally over stdio, from a clone of this directory:
@@ -83,7 +87,7 @@ replica before release.
 
 ## Where this stops
 
-These three tools answer one question each, for one period, one system, one basket. They are the
+These four tools answer one question each, for one period, one system, one basket, one company. They are the
 same free tier as the browser calculators at bindler.co, reaching a different surface.
 
 They do not do the job. The job is a return you can file, a register covering every AI system you
